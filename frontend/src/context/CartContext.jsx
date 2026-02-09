@@ -1,37 +1,74 @@
-import { createContext, useState } from "react";
+import { createContext, useContext, useState } from "react";
 
-export const CartContext = createContext();
+const CartContext = createContext();
 
-function CartProvider({ children }) {
+export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
 
-  // Add to cart
+  // 🛒 ADD TO CART
   const addToCart = (product) => {
-    const existing = cart.find(item => item.id === product.id);
+    setCart((prev) => {
+      const exist = prev.find((item) => item._id === product._id);
 
-    if (existing) {
-      setCart(
-        cart.map(item =>
-          item.id === product.id
+      if (exist) {
+        return prev.map((item) =>
+          item._id === product._id
             ? { ...item, qty: item.qty + 1 }
             : item
-        )
-      );
-    } else {
-      setCart([...cart, { ...product, qty: 1 }]);
-    }
+        );
+      }
+
+      // 🔥 IMPORTANT: _id 그대로 preserve
+      return [...prev, { ...product, qty: 1 }];
+    });
   };
 
-  // Remove from cart
+  // ❌ REMOVE FROM CART
   const removeFromCart = (id) => {
-    setCart(cart.filter(item => item.id !== id));
+    setCart((prev) => prev.filter((item) => item._id !== id));
+  };
+
+  // ➕ INCREASE QTY
+  const increaseQty = (id) => {
+    setCart((prev) =>
+      prev.map((item) =>
+        item._id === id
+          ? { ...item, qty: item.qty + 1 }
+          : item
+      )
+    );
+  };
+
+  // ➖ DECREASE QTY
+  const decreaseQty = (id) => {
+    setCart((prev) =>
+      prev.map((item) =>
+        item._id === id && item.qty > 1
+          ? { ...item, qty: item.qty - 1 }
+          : item
+      )
+    );
+  };
+
+  // 🧹 CLEAR CART (CHECKOUT KE BAAD)
+  const clearCart = () => {
+    setCart([]);
   };
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart }}>
+    <CartContext.Provider
+      value={{
+        cart,
+        addToCart,
+        removeFromCart,
+        increaseQty,
+        decreaseQty,
+        clearCart,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );
-}
+};
 
-export default CartProvider;
+export const useCart = () => useContext(CartContext);
